@@ -5,6 +5,8 @@ import (
 	"net"
 	"sync"
 
+	_ "github.com/wzshiming/jumpway/app/web"
+
 	_ "github.com/wzshiming/bridge/protocols/command"
 	_ "github.com/wzshiming/bridge/protocols/connect"
 	_ "github.com/wzshiming/bridge/protocols/netcat"
@@ -16,7 +18,6 @@ import (
 	_ "github.com/wzshiming/bridge/protocols/tls"
 	_ "github.com/wzshiming/bridge/protocols/ws"
 
-	_ "github.com/wzshiming/anyproxy/pprof"
 	_ "github.com/wzshiming/anyproxy/proxies/httpproxy"
 	_ "github.com/wzshiming/anyproxy/proxies/shadowsocks"
 	_ "github.com/wzshiming/anyproxy/proxies/socks4"
@@ -45,7 +46,7 @@ func RunProxy(ctx context.Context, listener net.Listener, ways []config.Node, no
 		"http://" + address,
 		"socks5://" + address,
 		"socks4://" + address,
-		"pprof://" + address,
+		"view://" + address,
 	}
 	proxy, err := anyproxy.NewAnyProxy(ctx, proxies, dialer, nil, BytesPool)
 	if err != nil {
