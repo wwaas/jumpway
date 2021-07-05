@@ -4,13 +4,14 @@ import (
 	"context"
 	"net"
 	"strconv"
+	_ "unsafe"
 
 	"github.com/wzshiming/bridge/protocols/local"
 
 	"github.com/getlantern/systray"
 	"github.com/wzshiming/jumpway"
 	"github.com/wzshiming/jumpway/config"
-	"github.com/wzshiming/logger"
+	"github.com/wzshiming/jumpway/log"
 )
 
 func (a *App) ItemReloadConfig(menu *systray.MenuItem) {
@@ -19,14 +20,14 @@ func (a *App) ItemReloadConfig(menu *systray.MenuItem) {
 	var listener net.Listener
 
 	check := func() {
-		logger.Log.Info("Reload config")
+		log.Info("Reload config")
 		if cancel != nil {
 			cancel()
 		}
 		ctx, cancel = context.WithCancel(context.Background())
 		conf, err := config.LoadConfig()
 		if err != nil {
-			logger.Log.Error(err, "LoadConfig")
+			log.Error(err, "LoadConfig")
 			systray.Quit()
 		}
 		port := conf.Proxy.Port
@@ -42,7 +43,7 @@ func (a *App) ItemReloadConfig(menu *systray.MenuItem) {
 		address := net.JoinHostPort(host, strconv.FormatUint(uint64(port), 10))
 		listener, err = local.LOCAL.Listen(ctx, "tcp", address)
 		if err != nil {
-			logger.Log.Error(err, "Listen")
+			log.Error(err, "Listen")
 			systray.Quit()
 		}
 
@@ -51,8 +52,8 @@ func (a *App) ItemReloadConfig(menu *systray.MenuItem) {
 		a.UpdateStatus()
 		go func() {
 			err := jumpway.RunProxy(ctx, listener, conf.GetWay(), conf.NoProxy.GetList())
-			if err != nil {
-				logger.Log.Error(err, "RunProxy")
+			if err != nil && !IsClosedConnError(err) {
+				log.Error(err, "RunProxy")
 			}
 		}()
 	}
@@ -62,3 +63,6 @@ func (a *App) ItemReloadConfig(menu *systray.MenuItem) {
 		check()
 	}
 }
+
+//go:linkname IsClosedConnError github.com/wzshiming/bridge/internal/common.IsClosedConnError
+func IsClosedConnError(err error) bool // implemented in github.com/wzshiming/bridge/internal/common
